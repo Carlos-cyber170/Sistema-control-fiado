@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Control de Negocio - Acceso</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+  :root {
+    --color-primary: #004e92;
+    --color-secondary: #000428;
+    --color-success: #4caf50;
+    --color-warning: #ffd700;
+    --color-info: #00aaff; /* Nuevo color para info/ventas */
+    --color-text: white;
+    --color-bg-light: rgba(255,255,255,0.08);
+    --color-bg-dark: rgba(255,255,255,0.13);
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to bottom, var(--color-secondary), var(--color-primary));
+    color: var(--color-text);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative; /* Para el menú lateral */
+  }
+  .container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--color-bg-light);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px #0006;
+    display: none; /* Inicialmente oculto */
+    width: 95%;
+  }
+  /* Estilos para el login */
+  #login-screen {
+    background: var(--color-bg-light);
+    border-radius: 18px;
+    padding: 3rem;
+    box-shadow: 0 8px 32px #0006;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+  }
+  #login-screen h2 {
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+  #login-screen input {
+    width: 100%;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    background: #fff3;
+    color: var(--color-text);
+    box-sizing: border-box;
+  }
+  #login-screen button {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--color-success);
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #login-screen button:hover {
+    background: #388e3c;
+  }
+  #login-error {
+    color: #ff5757;
+    margin-top: 10px;
+    font-weight: 600;
+    display: none;
+  }
+  /* Estilos de la navegación (pestañas) */
+  .nav-tabs {
+    display: flex;
+    justify-content: flex-start;
+    border-bottom: 3px solid rgba(255,255,255,0.2);
+    margin-bottom: 1.5rem;
+    padding-left: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 3px;
+  }
+  .nav-tab {
+    padding: 12px 25px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    transition: color 0.2s, background 0.2s;
+    border-radius: 8px 8px 0 0;
+    margin-right: 5px;
+    flex-shrink: 0;
+  }
+  .nav-tab.active {
+    color: var(--color-warning);
+    background: var(--color-bg-light);
+    border-bottom: 3px solid var(--color-warning);
+    margin-bottom: -3px; /* Para ocultar la línea de borde */
+  }
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  /* Estilos generales (aplican a ambos módulos) */
+  h2, h3 {
+    text-shadow: 2px 2px 5px #0005;
+    margin-bottom: 1rem;
+  }
+  form {
+    background: var(--color-bg-dark);
+    backdrop-filter: blur(8px);
+    padding: 1.5rem 2rem;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px #0003;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem 2%;
+    justify-content: space-between;
+  }
+  form label {
+    flex-basis: 32%;
+    text-align: left;
+    margin-bottom: 0.4rem;
+    font-size: 1rem;
+    color: #dce6fa;
+  }
+  form input, form select, form button:not(.nav-tab, .menu-puntos, .editar, .eliminar, #btnToggleSidebar) {
+    flex-basis: 32%;
+    margin-bottom: 0.4rem;
+    padding: 0.7rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.01rem;
+    transition: 0.3s;
+    outline: none;
+  }
+  form input, form select {
+    background: #fff3;
+    color: #fff;
+  }
+  form input:focus, form select:focus {
+    background: #fff6;
+    color: #fff;
+    box-shadow: 0 0 0 2px var(--color-success);
+  }
+  form button[type="submit"] {
+    background-color: var(--color-success);
+    color: white;
+    font-weight: 600;
+    margin-top: 0.8rem;
+    flex-basis: 100%;
+    transition: background 0.2s, transform 0.2s;
+  }
+  form button[type="submit"]:hover { background: #388e3c; transform: scale(1.03); }
+
+  /* Estilos específicos para el selector de productos en créditos/ventas */
+  .full-width-control {
+    flex-basis: 100% !important;
+  }
+  #productos-seleccionados, #productos-venta-seleccionados {
+    flex-basis: 100%;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+  .producto-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    margin-bottom: 5px;
+  }
+  .producto-item .nombre {
+    font-weight: 600;
+  }
+  .producto-item .precio, .producto-item .cantidad-display {
+    color: var(--color-warning);
+    font-weight: 600;
+  }
+  .producto-item button {
+    background: #f44336;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  /* Estilos del menú Hamburguesa (Sidebar) */
+  #sidebar-facturas {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background: var(--color-secondary);
+    box-shadow: -4px 0 10px #0008;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    padding: 20px;
+    z-index: 1001;
+    overflow-y: auto;
+  }
+  #sidebar-facturas.open {
+    transform: translateX(0);
+  }
+  #btnToggleSidebar {
+    position: fixed;
+    top: 25px;
+    right: 20px;
+    z-index: 1002;
+    background: var(--color-info);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px #0004;
+    display: none; /* AÑADIDO: Ocultar el botón por defecto */
+  }
+  #sidebar-facturas h3 {
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  .factura-item {
+    background: var(--color-bg-light);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+  }
+  .factura-item p {
+    margin: 5px 0;
+  }
+  .factura-item .total {
+    font-weight: 700;
+    color: var(--color-warning);
+    font-size: 1.1em;
+    border-top: 1px dashed rgba(255,255,255,0.3);
+    padding-top: 5px;
+    margin-top: 10px;
+  }
+
+  /* Continúan estilos del código anterior */
+  .section-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  #busqueda-creditos, #busqueda-inventario, #busqueda-ventas {
+    width: 280px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1rem;
+    background: #fff3;
+    color: #fff;
+    border: none;
+    padding: 0.65rem;
+    transition: 0.2s;
+  }
+  #busqueda-creditos:focus, #busqueda-inventario:focus, #busqueda-ventas:focus { background: #fff6; }
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 2px 16px #0002;
+    margin-bottom: 1.5rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+    background: transparent;
+  }
+  th, td {
+    padding: 13px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.13);
+    text-align: center;
+    font-size: 1.02rem;
+  }
+  th {
+    background: rgba(255,255,255,0.17);
+    color: #e0e8ff;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  tr:last-child td { border-bottom: none; }
+  td button {
+    margin-right: 3px;
+    border-radius: 6px;
+    padding: 7px 11px;
+    font-size: 1.02em;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+    outline: none;
+  }
+  .editar { background: #2196f3; color: white;}
+  .editar:hover { background: #1772b6; }
+  .eliminar { background: #f44336; color: white;}
+  .eliminar:hover { background: #b71c1c; }
+  .menu-puntos {
+    background: none;
+    font-size: 1.45em;
+    color: #fff;
+    border: none;
+    vertical-align: middle;
+    cursor: pointer;
+    padding: 0 7px;
+  }
+  .menu-puntos:hover { color: var(--color-warning);}
+  #tooltipFechas {
+    position: absolute;
+    background: #112e;
+    color: #fff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    z-index: 1000;
+    min-width: 240px;
+    text-align: left;
+    box-shadow: 0 2px 18px #0007;
+    display: none;
+    transition: 0.2s;
+    pointer-events: none;
+    font-size: 0.99rem;
+  }
+  .resumen-bar {
+    display: flex;
+    gap: 2rem;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  #totalMontoCredito, #totalValorInventario, #totalVentas {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--color-warning);
+    text-shadow: 0 1px 4px #0009;
+  }
+  .bitacora-list {
+    background: rgba(255,255,255,0.09);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 2px 10px #0002;
+    list-style: none; /* Quita los puntos de lista */
+    padding-left: 0;
+  }
+  .bitacora-list li {
+    padding: 9px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.07);
+    font-size: 0.97rem;
+    transition: 0.2s;
+  }
+  .bitacora-list li:last-child { margin-bottom: 0; }
+  /* Resaltado para vencidos */
+  .vencido-hoy { background: #ff3c3c50 !important; }
+  .vencido-atrasado { background: #ff000075 !important; color: #fff !important; }
+  /* Estilo para botón de exportar */
+  .btn-exportar {
+    background: #ffe082;
+    color: #333;
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 1px 5px #0003;
+    cursor: pointer;
+  }
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container { padding: 1rem 0.2rem; }
+    form { flex-direction: column; gap: 0.7rem; }
+    form label, form input, form select, form button:not(.nav-tab, .menu-puntos, .editar, .eliminar, #btnToggleSidebar) {
+        flex-basis: 100%;
+    }
+    .section-bar { flex-direction: column; gap: 0.7rem;}
+    #busqueda-creditos, #busqueda-inventario, #busqueda-ventas { width: 100%; }
+    .resumen-bar { flex-direction: column; gap: 0.8rem; justify-content: center;}
+    .table-wrapper { min-width: 100%; }
+    table { min-width: 500px; }
+    #sidebar-facturas { width: 100%; padding: 10px;}
+    #btnToggleSidebar { top: 15px; right: 15px;}
+  }
+</style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <h2><i class="fa-solid fa-lock"></i> Acceso al Sistema</h2>
+    <form id="login-form">
+      <input type="password" id="password-input" placeholder="Ingresa la Contraseña" required autocomplete="off">
+      <button type="submit">Entrar</button>
+    </form>
+    <p id="login-error">Contraseña incorrecta. Inténtalo de nuevo.</p>
+  </div>
+
+  <div class="container" id="main-app">
+    <header style="margin-bottom: 1.5rem; text-align:center;">
+        <h1 style="margin: 0;">Control de Negocio <i class="fa-solid fa-store"></i></h1>
+    </header>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="creditos"><i class="fa-solid fa-hand-holding-dollar"></i> Créditos</button>
+      <button class="nav-tab" data-tab="inventario"><i class="fa-solid fa-box-open"></i> Inventario</button>
+      <button class="nav-tab" data-tab="ventas"><i class="fa-solid fa-cash-register"></i> Ventas</button>
+      <button class="nav-tab" data-tab="calculadora"><i class="fa-solid fa-calculator"></i> Calculadora</button>
+    </div>
+
+    <div id="creditos" class="tab-content active">
+        <h2>Registro de Clientes con Crédito</h2>
+        <form id="formularioCliente" autocomplete="off">
+            <label>Nombre:<input type="text" name="nombre" required /></label>
+            <label>Apellido:<input type="text" name="apellido" required /></label>
+            <label>Teléfono:<input type="tel" name="telefono" required placeholder="Ej: +50371234567"/></label>
+            
+            <label class="full-width-control">
+                Producto(s) del Inventario:
+                <div style="display:flex; gap: 10px; align-items: center;">
+                    <select id="selectProductoCredito" style="flex-grow: 1;">
+                        <option value="">-- Seleccione un Producto --</option>
+                    </select>
+                    <button type="button" id="btnAgregarProductoCredito" style="flex-basis: auto; margin:0; width: auto; padding: 7px 15px;"><i class="fa-solid fa-cart-plus"></i> Agregar</button>
+                </div>
+                <div id="productos-seleccionados">
+                    </div>
+            </label>
+            
+            <label>Fecha de Inicio:<input type="date" name="inicio" required /></label>
+            <label>Fecha de Pago:<input type="date" name="pago" required /></label>
+            <label>Monto del Crédito Total (Auto):<input type="number" name="monto" step="0.01" required readonly /></label>
+            <input type="hidden" name="productosData" />
+
+            <button type="submit"><i class="fa-solid fa-user-plus"></i> <span id="submitTextCreditos">Registrar Cliente</span></button>
+        </form>
+
+        <div class="section-bar">
+            <h3 style="margin:0;">Lista de Clientes</h3>
+            <input type="text" id="busqueda-creditos" placeholder="Buscar por nombre o teléfono..." onkeyup="filtrarClientes()">
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Teléfono</th>
+                        <th>Producto(s)</th>
+                        <th>Inicio</th>
+                        <th>Pago</th>
+                        <th>Monto</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="listaClientes"></tbody>
+            </table>
+        </div>
+        <div id="tooltipFechas"></div>
+        <div class="resumen-bar">
+            <div><b>Total en Créditos:</b> $<span id="totalMontoCredito">0.00</span></div>
+            <button onclick="exportarExcelCreditos()" class="btn-exportar">
+                <i class="fa-solid fa-file-excel"></i> Exportar a Excel
+            </button>
+        </div>
+        <h3>Bitácora de Movimientos (Créditos)</h3>
+        <ul id="bitacora" class="bitacora-list"></ul>
+    </div>
+
+    <div id="inventario" class="tab-content">
+        <h2>Registro de Productos</h2>
+        <form id="formularioProducto" autocomplete="off">
+            <label>Nombre del Producto:<input type="text" name="nombre" required /></label>
+            <label>Cantidad:<input type="number" name="cantidad" min="1" required /></label>
+            <label>Costo Unitario ($):<input type="number" name="costo" step="0.01" required /></label>
+            <label>Precio de Venta ($):<input type="number" name="precio" step="0.01" required /></label>
+            <label>Proveedor (Opcional):<input type="text" name="proveedor" /></label>
+            <label>Fecha de Registro:<input type="date" name="fechaRegistro" required /></label>
+            <input type="hidden" name="idProducto">
+            <button type="submit"><i class="fa-solid fa-box"></i> <span id="submitTextInventario">Registrar Producto</span></button>
+        </form>
+
+        <div class="section-bar">
+            <h3 style="margin:0;">Inventario Actual</h3>
+            <input type="text" id="busqueda-inventario" placeholder="Buscar por nombre o proveedor..." onkeyup="filtrarProductos()">
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Cantidad</th>
+                        <th>Costo Unit.</th>
+                        <th>Precio Venta</th>
+                        <th>Proveedor</th>
+                        <th>Fecha Reg.</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="listaProductos"></tbody>
+            </table>
+        </div>
+        <div class="resumen-bar">
+            <div><b>Valor Total en Inventario:</b> $<span id="totalValorInventario">0.00</span></div>
+            <button onclick="exportarExcelInventario()" class="btn-exportar">
+                <i class="fa-solid fa-file-excel"></i> Exportar a Excel
+            </button>
+        </div>
+    </div>
+
+    <div id="ventas" class="tab-content">
+        <h2>Registro de Venta Diaria</h2>
+        <form id="formularioVenta" autocomplete="off">
+            <label class="full-width-control">
+                Producto(s) a Vender:
+                <div style="display:flex; gap: 10px; align-items: center;">
+                    <select id="selectProductoVenta" style="flex-grow: 1;">
+                        <option value="">-- Seleccione un Producto --</option>
+                    </select>
+                    <input type="number" id="cantidadVenta" value="1" min="1" style="flex-basis: 80px; text-align: center; margin:0;"/>
+                    <button type="button" id="btnAgregarProductoVenta" style="flex-basis: auto; margin:0; width: auto; padding: 7px 15px;"><i class="fa-solid fa-cart-plus"></i> Añadir</button>
+                </div>
+                <div id="productos-venta-seleccionados"></div>
+            </label>
+            
+            <label>Fecha de Venta:<input type="date" name="fechaVenta" required /></label>
+            <label>Monto Total (Auto):<input type="number" name="montoVenta" step="0.01" required readonly value="0.00"/></label>
+            <label>
+                Método de Pago:
+                <select name="metodoPago" id="selectMetodoPago" required>
+                    <option value="">-- Seleccione --</option>
+                    <option value="punto_venta">Punto de Venta</option>
+                    <option value="efectivo_bs">Efectivo (Bs)</option>
+                    <option value="efectivo_usd">Efectivo (USD)</option>
+                    <option value="pago_movil">Pago Móvil</option>
+                    <option value="binance_selle">Binance Selle</option>
+                </select>
+            </label>
+
+            <label id="labelReferenciaPago" style="display:none; flex-basis: 32%;">
+                Ref. Pago Móvil (4 dígitos):
+                <input type="text" name="referenciaPago" id="referenciaPago" maxlength="4" placeholder="Últimos 4 digitos" />
+            </label>
+            
+            <input type="hidden" name="productosVentaData" />
+            <button type="submit"><i class="fa-solid fa-receipt"></i> Registrar Venta</button>
+        </form>
+
+        <div class="resumen-bar">
+            <div><b>Total Acumulado en Ventas:</b> $<span id="totalVentas">0.00</span></div>
+            <button onclick="exportarExcelVentas()" class="btn-exportar">
+                <i class="fa-solid fa-file-excel"></i> Exportar a Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Nueva sección: Calculadora -->
+    <div id="calculadora" class="tab-content">
+      <h2>Calculadora de Producto</h2>
+      <form id="formCalculadora" autocomplete="off">
+        <label>Nombre del Producto:<input type="text" id="calcNombre" required /></label>
+        <label>Costo Unitario ($):<input type="number" id="calcCosto" step="0.01" required /></label>
+        <label>Proveedor:<input type="text" id="calcProveedor" /></label>
+        <label>Cantidad:<input type="number" id="calcCantidad" min="1" value="1" required /></label>
+        <label>IVA (%):<input type="number" id="calcIVA" step="0.01" value="16" required /></label>
+        <label>Porcentaje Ganancia (%):<input type="number" id="calcGanancia" step="0.01" value="20" required /></label>
+
+        <div style="flex-basis:100%; display:flex; gap:12px; align-items:center;">
+          <div style="flex:1;">
+            <button type="button" id="btnCalcularPrecio" style="width:100%; padding:10px;" class="btn-exportar"><i class="fa-solid fa-square-root-variable"></i> Calcular Precio</button>
+          </div>
+          <div style="flex:1;">
+            <button type="submit" style="width:100%; padding:10px;" class="btn-exportar"><i class="fa-solid fa-box"></i> Crear en Inventario</button>
+          </div>
+        </div>
+
+        <div id="calcResultado" style="flex-basis:100%; margin-top:10px; color: #e0e8ff; font-weight:600;"></div>
+      </form>
+
+      <div class="section-bar" style="margin-top: 1rem;">
+        <h3 style="margin:0;">Últimas configuraciones guardadas</h3>
+        <button id="btnCargarCalc" class="btn-exportar" style="height:40px;">Cargar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <button id="btnToggleSidebar"><i class="fa-solid fa-bars"></i></button>
+  <div id="sidebar-facturas">
+      <h3>Historial de Ventas/Facturas</h3>
+      <div id="listaFacturas">
+          <p style="color: rgba(255,255,255,0.6);">Aún no hay ventas registradas.</p>
+      </div>
+  </div>
+
+  <script>
+    // **********************************************
+    //         LÓGICA DE INICIO DE SESIÓN
+    // **********************************************
+
+    const CORRECT_PASSWORD = '33101663';
+    const loginForm = document.getElementById('login-form');
+    const passwordInput = document.getElementById('password-input');
+    const loginScreen = document.getElementById('login-screen');
+    const mainApp = document.getElementById('main-app');
+    const loginError = document.getElementById('login-error');
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+    const sidebarFacturas = document.getElementById('sidebar-facturas');
+
+    loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (passwordInput.value === CORRECT_PASSWORD) {
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'block';
+            btnToggleSidebar.style.display = 'block'; // AHORA SE MUESTRA AQUÍ
+            initApp();
+            chequearPagosVencidos();
+        } else {
+            loginError.style.display = 'block';
+            passwordInput.value = '';
+            setTimeout(() => { loginError.style.display = 'none'; }, 3000);
+        }
+    });
+
+    btnToggleSidebar.addEventListener('click', () => {
+        sidebarFacturas.classList.toggle('open');
+    });
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetId = tab.dataset.tab;
+
+            navTabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(targetId).classList.add('active');
+
+            if (targetId === 'creditos') {
+                calcularTotalCreditos();
+                renderizarListaClientes();
+                poblarSelectorProductos('credito');
+            } else if (targetId === 'inventario') {
+                calcularTotalInventario();
+                renderizarListaProductos();
+                // Si hay datos en la calculadora, no sobrescribimos, pero se puede cargar manualmente
+            } else if (targetId === 'ventas') {
+                poblarSelectorProductos('venta');
+                calcularTotalVentas();
+            } else if (targetId === 'calculadora') {
+                // nada adicional necesario
+            }
+        });
+    });
+
+
+    // **********************************************
+    //         LÓGICA MÓDULO DE CRÉDITOS
+    // **********************************************
+
+    const formCreditos = document.getElementById('formularioCliente');
+    const listaClientes = document.getElementById('listaClientes');
+    const totalMontoCredito = document.getElementById('totalMontoCredito');
+    const bitacora = document.getElementById('bitacora');
+    const tooltipFechas = document.getElementById('tooltipFechas');
+    const submitTextCreditos = document.getElementById('submitTextCreditos');
+    const selectProductoCredito = document.getElementById('selectProductoCredito'); // Renombrado
+    const btnAgregarProductoCredito = document.getElementById('btnAgregarProductoCredito'); // Renombrado
+    const productosSeleccionadosDiv = document.getElementById('productos-seleccionados');
+    
+    let productosEnCredito = [];
+    let indexEditarCredito = null;
+
+    const WHATSAPP_API_KEY = 'TU_API_KEY'; // CAMBIA ESTO POR TU APIKEY
+
+    async function enviarMensajeWhatsApp(numero, mensaje) {
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(numero)}&text=${encodeURIComponent(mensaje)}&apikey=${WHATSAPP_API_KEY}`;
+      try {
+        // En un entorno real, descomentar el fetch:
+        // await fetch(url);
+        console.log('Mensaje de WhatsApp (simulado) enviado a:', numero);
+      } catch (e) {
+        console.error('Error enviando WhatsApp (simulado)', e);
+      }
+    }
+
+    async function chequearPagosVencidos() {
+      const clientes = obtenerClientes();
+      const hoy = new Date();
+      let cambio = false;
+      for (let i = 0; i < clientes.length; ++i) {
+        const c = clientes[i];
+        const fechaPago = new Date(c.pago);
+        if ((hoy - fechaPago) > 24 * 60 * 60 * 1000 && !c.mensajeEnviado) {
+          const productosStr = c.productosData ? c.productosData.map(p => p.nombre).join(', ') : 'Varios';
+          const mensaje = `Hola un gusto saludarte, te agradecemos ponerte al día con tus pagos.%0A%0AProductos: ${productosStr}%0AMonto: $${parseFloat(c.monto).toFixed(2)}`;
+          await enviarMensajeWhatsApp(c.telefono.replace(/\+/g, ''), mensaje);
+          c.mensajeEnviado = true;
+          cambio = true;
+          registrarBitacora(`WhatsApp enviado a ${c.nombre} ${c.apellido} por deuda vencida.`, i);
+        }
+      }
+      if (cambio) guardarClientes(clientes);
+      renderizarListaClientes();
+    }
+
+    function obtenerClientes() {
+      return JSON.parse(localStorage.getItem('clientes')) || [];
+    }
+    function guardarClientes(clientes) {
+      localStorage.setItem('clientes', JSON.stringify(clientes));
+      calcularTotalCreditos();
+    }
+    function renderizarListaClientes(clientes = obtenerClientes()) {
+      const hoy = new Date().toISOString().slice(0, 10);
+      listaClientes.innerHTML = clientes.map((c, i) => {
+        let claseVencido = "";
+        if (c.pago === hoy) claseVencido = "vencido-hoy";
+        if (new Date(c.pago) < new Date(hoy)) claseVencido = "vencido-atrasado";
+        
+        const productosStr = (c.productosData && c.productosData.length > 0) 
+            ? c.productosData.map(p => p.nombre).join(', ') 
+            : 'Sin Producto';
+
+        return `
+          <tr class="${claseVencido}">
+            <td>${c.nombre}</td>
+            <td>${c.apellido}</td>
+            <td>${c.telefono}</td>
+            <td>${productosStr}</td>
+            <td>${c.inicio}</td>
+            <td>${c.pago}</td>
+            <td>$${parseFloat(c.monto).toFixed(2)}</td>
+            <td>
+              <button class="editar" title="Editar" onclick="editarCliente(${i})"><i class="fa-solid fa-pen"></i></button>
+              <button class="eliminar" title="Eliminar" onclick="eliminarCliente(${i})"><i class="fa-solid fa-trash"></i></button>
+              <button class="menu-puntos" title="Ver historial" onclick="mostrarFechasCliente(event,${i})"><i class="fa-solid fa-ellipsis-v"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    function calcularTotalCreditos() {
+      const clientes = obtenerClientes();
+      const total = clientes.reduce((sum, c) => sum + parseFloat(c.monto || 0), 0);
+      totalMontoCredito.textContent = total.toFixed(2);
+    }
+    function registrarBitacora(mensaje, indexCliente) {
+      const fecha = new Date().toLocaleString();
+      const movimientos = JSON.parse(localStorage.getItem('bitacora')) || [];
+      movimientos.push({ fecha, mensaje, indexCliente });
+      localStorage.setItem('bitacora', JSON.stringify(movimientos));
+      mostrarBitacora();
+    }
+    function mostrarBitacora() {
+      const movimientos = JSON.parse(localStorage.getItem('bitacora')) || [];
+      bitacora.innerHTML = movimientos.map(m => `<li>${m.fecha} - ${m.mensaje}</li>`).reverse().join('');
+    }
+    function filtrarClientes() {
+      const termino = document.getElementById('busqueda-creditos').value.toLowerCase();
+      const clientes = obtenerClientes().filter(c =>
+        c.nombre.toLowerCase().includes(termino) ||
+        c.telefono.includes(termino)
+      );
+      renderizarListaClientes(clientes);
+    }
+    
+    function renderizarProductosEnCredito() {
+        productosSeleccionadosDiv.innerHTML = productosEnCredito.map((p, index) => `
+            <div class="producto-item">
+                <span class="nombre">${p.nombre}</span> 
+                <span class="precio">($${parseFloat(p.precio).toFixed(2)})</span>
+                <button type="button" onclick="removerProductoCredito(${index})"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        `).join('');
+
+        const total = productosEnCredito.reduce((sum, p) => sum + parseFloat(p.precio), 0);
+        formCreditos.monto.value = total.toFixed(2);
+    }
+
+    function poblarSelectorProductos(modulo) {
+        const productosInventario = obtenerProductos();
+        let selector;
+
+        if (modulo === 'credito') {
+            selector = selectProductoCredito;
+        } else if (modulo === 'venta') {
+            selector = selectProductoVenta;
+        } else {
+            return;
+        }
+
+        selector.innerHTML = '<option value="">-- Seleccione un Producto --</option>';
+        productosInventario.forEach(p => {
+            // Solo agregar productos con cantidad > 0
+            if (p.cantidad > 0) {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = `${p.nombre} (Stock: ${p.cantidad}) - $${parseFloat(p.precio).toFixed(2)}`;
+                option.setAttribute('data-precio', p.precio);
+                option.setAttribute('data-stock', p.cantidad);
+                selector.appendChild(option);
+            }
+        });
+    }
+
+    btnAgregarProductoCredito.addEventListener('click', () => {
+        const selectedOption = selectProductoCredito.options[selectProductoCredito.selectedIndex];
+        if (selectedOption.value) {
+            const productoId = selectedOption.value;
+            const productoNombre = selectedOption.textContent.split(' (Stock:')[0];
+            const productoPrecio = selectedOption.getAttribute('data-precio');
+
+            productosEnCredito.push({
+                id: productoId,
+                nombre: productoNombre,
+                precio: parseFloat(productoPrecio)
+            });
+            renderizarProductosEnCredito();
+            selectProductoCredito.selectedIndex = 0;
+        } else {
+            alert("Por favor, seleccione un producto.");
+        }
+    });
+
+    window.removerProductoCredito = (index) => {
+        productosEnCredito.splice(index, 1);
+        renderizarProductosEnCredito();
+    };
+
+    function resetearFormularioCredito() {
+        formCreditos.reset();
+        productosEnCredito = [];
+        productosSeleccionadosDiv.innerHTML = '';
+        indexEditarCredito = null;
+        submitTextCreditos.textContent = "Registrar Cliente";
+        formCreditos.monto.value = (0.00).toFixed(2);
+    }
+
+
+    function editarCliente(index) {
+      const cliente = obtenerClientes()[index];
+      formCreditos.nombre.value = cliente.nombre;
+      formCreditos.apellido.value = cliente.apellido;
+      formCreditos.telefono.value = cliente.telefono;
+      formCreditos.inicio.value = cliente.inicio;
+      formCreditos.pago.value = cliente.pago;
+      formCreditos.monto.value = cliente.monto;
+      
+      productosEnCredito = cliente.productosData ? [...cliente.productosData] : [];
+      renderizarProductosEnCredito();
+
+      indexEditarCredito = index;
+      submitTextCreditos.textContent = "Actualizar Cliente";
+      formCreditos.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    function eliminarCliente(index) {
+      let clientes = obtenerClientes();
+      const clienteEliminado = clientes[index];
+      if (confirm(`¿Eliminar a ${clienteEliminado.nombre} ${clienteEliminado.apellido}?`)) {
+        clientes.splice(index, 1);
+        guardarClientes(clientes);
+        registrarBitacora(`Cliente ${clienteEliminado.nombre} ${clienteEliminado.apellido} eliminado.`, index);
+        
+        if (indexEditarCredito === index) resetearFormularioCredito();
+
+        renderizarListaClientes();
+        calcularTotalCreditos();
+      }
+    }
+    
+    formCreditos.addEventListener("submit", (event) => {
+      event.preventDefault();
+      let clientes = obtenerClientes();
+      
+      if (productosEnCredito.length === 0) {
+          alert("Debe agregar al menos un producto del inventario.");
+          return;
+      }
+
+      const montoTotal = parseFloat(formCreditos.monto.value);
+
+      const datosCliente = {
+          nombre: formCreditos.nombre.value,
+          apellido: formCreditos.apellido.value,
+          telefono: formCreditos.telefono.value,
+          inicio: formCreditos.inicio.value,
+          pago: formCreditos.pago.value,
+          monto: montoTotal.toFixed(2),
+          productosData: productosEnCredito,
+      };
+
+      if (indexEditarCredito !== null) {
+        const clienteOriginal = clientes[indexEditarCredito];
+        clientes[indexEditarCredito] = {
+          ...clienteOriginal,
+          ...datosCliente,
+          mensajeEnviado: clienteOriginal.mensajeEnviado || false
+        };
+        guardarClientes(clientes);
+        registrarBitacora(`Cliente ${datosCliente.nombre} ${datosCliente.apellido} actualizado.`, indexEditarCredito);
+      } else {
+        const nuevoCliente = { ...datosCliente, mensajeEnviado: false };
+        clientes.push(nuevoCliente);
+        guardarClientes(clientes);
+        registrarBitacora(`Cliente ${nuevoCliente.nombre} ${nuevoCliente.apellido} registrado.`, clientes.length - 1);
+      }
+      
+      renderizarListaClientes();
+      resetearFormularioCredito();
+    });
+    
+    function mostrarFechasCliente(event, index) {
+      event.stopPropagation();
+      const movimientos = JSON.parse(localStorage.getItem('bitacora')) || [];
+      const historial = movimientos
+        .filter(m => m.indexCliente === index)
+        .map(m => `<div style="margin-bottom:5px;"><span style="color:#ffd700">${m.fecha}</span><br><span style="font-size:0.93em;">${m.mensaje}</span></div>`)
+        .join('') || "<em>Sin historial para este cliente.</em>";
+      tooltipFechas.innerHTML = `<b>Historial de cambios:</b><br>${historial}`;
+      const rect = event.target.getBoundingClientRect();
+      tooltipFechas.style.display = "block";
+      tooltipFechas.style.top = (window.scrollY + rect.bottom + 8) + "px";
+      let leftPosition = (window.scrollX + rect.left - 120);
+      if (window.innerWidth < 768) {
+          leftPosition = (window.scrollX + rect.left - 200);
+      }
+      tooltipFechas.style.left = leftPosition + "px";
+      tooltipFechas.style.pointerEvents = "auto";
+    }
+
+    document.addEventListener('click', function() {
+      tooltipFechas.style.display = "none";
+    });
+
+    function exportarExcelCreditos() {
+      const clientes = obtenerClientes();
+      if (clientes.length === 0) {
+        alert("No hay clientes para exportar.");
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Nombre,Apellido,Teléfono,Producto(s),Inicio,Pago,Monto\n";
+      clientes.forEach(c => {
+        const productosStr = c.productosData ? c.productosData.map(p => p.nombre).join('; ') : 'Varios';
+        csvContent += `${c.nombre},${c.apellido},${c.telefono},"${productosStr}",${c.inicio},${c.pago},${parseFloat(c.monto).toFixed(2)}\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "clientes_credito.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // **********************************************
+    //         LÓGICA MÓDULO DE INVENTARIO
+    // **********************************************
+
+    const formInventario = document.getElementById('formularioProducto');
+    const listaProductos = document.getElementById('listaProductos');
+    const totalValorInventario = document.getElementById('totalValorInventario');
+    const submitTextInventario = document.getElementById('submitTextInventario');
+    let idEditarInventario = null;
+
+    function obtenerProductos() {
+      return JSON.parse(localStorage.getItem('productos')) || [];
+    }
+    function guardarProductos(productos) {
+      localStorage.setItem('productos', JSON.stringify(productos));
+      calcularTotalInventario();
+      poblarSelectorProductos('credito');
+      poblarSelectorProductos('venta'); // Recargar el selector de ventas también
+    }
+    function calcularTotalInventario() {
+      const productos = obtenerProductos();
+      const total = productos.reduce((sum, p) => sum + (parseFloat(p.costo || 0) * parseInt(p.cantidad || 0)), 0);
+      totalValorInventario.textContent = total.toFixed(2);
+    }
+    function renderizarListaProductos(productos = obtenerProductos()) {
+      listaProductos.innerHTML = productos.map(p => `
+          <tr data-id="${p.id}">
+            <td>${p.nombre}</td>
+            <td>${p.cantidad}</td>
+            <td>$${parseFloat(p.costo).toFixed(2)}</td>
+            <td>$${parseFloat(p.precio).toFixed(2)}</td>
+            <td>${p.proveedor || ''}</td>
+            <td>${p.fechaRegistro}</td>
+            <td>
+              <button class="editar" title="Editar" onclick="editarProducto('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="eliminar" title="Eliminar" onclick="eliminarProducto('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+    }
+    function filtrarProductos() {
+        const termino = document.getElementById('busqueda-inventario').value.toLowerCase();
+        const productos = obtenerProductos().filter(p =>
+            p.nombre.toLowerCase().includes(termino) ||
+            (p.proveedor || '').toLowerCase().includes(termino)
+        );
+        renderizarListaProductos(productos);
+    }
+    function editarProducto(id) {
+        const productos = obtenerProductos();
+        const producto = productos.find(p => p.id === id);
+        if (producto) {
+            formInventario.nombre.value = producto.nombre;
+            formInventario.cantidad.value = producto.cantidad;
+            formInventario.costo.value = producto.costo;
+            formInventario.precio.value = producto.precio;
+            formInventario.proveedor.value = producto.proveedor;
+            formInventario.fechaRegistro.value = producto.fechaRegistro;
+            formInventario.idProducto.value = producto.id;
+            idEditarInventario = id;
+            submitTextInventario.textContent = "Actualizar Producto";
+            formInventario.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    function eliminarProducto(id) {
+        let productos = obtenerProductos();
+        const index = productos.findIndex(p => p.id === id);
+        if (index > -1) {
+            const productoEliminado = productos[index];
+            if (confirm(`¿Eliminar ${productoEliminado.nombre} del inventario?`)) {
+                productos.splice(index, 1);
+                guardarProductos(productos);
+                renderizarListaProductos();
+                calcularTotalInventario();
+            }
+        }
+    }
+    formInventario.addEventListener("submit", (event) => {
+        event.preventDefault();
+        let productos = obtenerProductos();
+
+        const nuevoProducto = {
+            nombre: formInventario.nombre.value,
+            cantidad: parseInt(formInventario.cantidad.value),
+            costo: parseFloat(formInventario.costo.value),
+            precio: parseFloat(formInventario.precio.value),
+            proveedor: formInventario.proveedor.value,
+            fechaRegistro: formInventario.fechaRegistro.value,
+        };
+
+        if (idEditarInventario) {
+            const index = productos.findIndex(p => p.id === idEditarInventario);
+            if (index > -1) {
+                productos[index] = { ...productos[index], ...nuevoProducto };
+                guardarProductos(productos);
+            }
+            idEditarInventario = null;
+            submitTextInventario.textContent = "Registrar Producto";
+        } else {
+            nuevoProducto.id = Date.now().toString();
+            productos.push(nuevoProducto);
+            guardarProductos(productos);
+        }
+
+        renderizarListaProductos();
+        formInventario.reset();
+    });
+    function exportarExcelInventario() {
+        const productos = obtenerProductos();
+        if (productos.length === 0) {
+            alert("No hay productos para exportar.");
+            return;
+        }
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Nombre,Cantidad,Costo Unitario,Precio Venta,Proveedor,Fecha Registro\n";
+        productos.forEach(p => {
+            csvContent += `${p.nombre},${p.cantidad},${parseFloat(p.costo).toFixed(2)},${parseFloat(p.precio).toFixed(2)},"${p.proveedor || ''}",${p.fechaRegistro}\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "inventario_productos.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // **********************************************
+    //         LÓGICA MÓDULO DE VENTAS (NUEVO)
+    // **********************************************
+
+    const formVenta = document.getElementById('formularioVenta');
+    const selectProductoVenta = document.getElementById('selectProductoVenta');
+    const cantidadVentaInput = document.getElementById('cantidadVenta');
+    const btnAgregarProductoVenta = document.getElementById('btnAgregarProductoVenta');
+    const productosVentaSeleccionadosDiv = document.getElementById('productos-venta-seleccionados');
+    const selectMetodoPago = document.getElementById('selectMetodoPago');
+    const labelReferenciaPago = document.getElementById('labelReferenciaPago');
+    const referenciaPagoInput = document.getElementById('referenciaPago');
+    const totalVentasSpan = document.getElementById('totalVentas');
+    const listaFacturasDiv = document.getElementById('listaFacturas');
+
+    let productosEnVenta = [];
+
+    function obtenerVentas() {
+        return JSON.parse(localStorage.getItem('ventas')) || [];
+    }
+
+    function guardarVentas(ventas) {
+        localStorage.setItem('ventas', JSON.stringify(ventas));
+        calcularTotalVentas();
+        renderizarFacturas();
+    }
+    
+    function calcularTotalVentas() {
+        const ventas = obtenerVentas();
+        const total = ventas.reduce((sum, v) => sum + parseFloat(v.montoTotal || 0), 0);
+        totalVentasSpan.textContent = total.toFixed(2);
+    }
+
+    // Lógica para mostrar/ocultar el campo de referencia
+    selectMetodoPago.addEventListener('change', () => {
+        const esPagoMovil = selectMetodoPago.value === 'pago_movil';
+        labelReferenciaPago.style.display = esPagoMovil ? 'block' : 'none';
+        referenciaPagoInput.required = esPagoMovil;
+        if (!esPagoMovil) referenciaPagoInput.value = '';
+    });
+
+    // Función para renderizar la lista de productos seleccionados en la venta
+    function renderizarProductosEnVenta() {
+        productosVentaSeleccionadosDiv.innerHTML = productosEnVenta.map((p, index) => `
+            <div class="producto-item">
+                <span class="nombre">${p.nombre}</span> 
+                <span class="cantidad-display">${p.cantidad} x</span>
+                <span class="precio">$${(p.precio * p.cantidad).toFixed(2)}</span>
+                <button type="button" onclick="removerProductoVenta(${index})"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        `).join('');
+
+        const total = productosEnVenta.reduce((sum, p) => sum + (parseFloat(p.precio) * p.cantidad), 0);
+        formVenta.montoVenta.value = total.toFixed(2);
+    }
+
+    btnAgregarProductoVenta.addEventListener('click', () => {
+        const selectedOption = selectProductoVenta.options[selectProductoVenta.selectedIndex];
+        const cantidad = parseInt(cantidadVentaInput.value);
+
+        if (!selectedOption.value || cantidad < 1) {
+            alert("Por favor, seleccione un producto y una cantidad válida.");
+            return;
+        }
+
+        const productoStock = parseInt(selectedOption.getAttribute('data-stock'));
+        if (cantidad > productoStock) {
+            alert(`No hay suficiente stock. Disponible: ${productoStock}`);
+            return;
+        }
+
+        const productoId = selectedOption.value;
+        const productoNombre = selectedOption.textContent.split(' (Stock:')[0];
+        const productoPrecio = parseFloat(selectedOption.getAttribute('data-precio'));
+
+        // Revisa si el producto ya fue agregado para sumar la cantidad
+        const productoExistenteIndex = productosEnVenta.findIndex(p => p.id === productoId);
+
+        if (productoExistenteIndex > -1) {
+            // Verifica que la suma no exceda el stock
+            if (productosEnVenta[productoExistenteIndex].cantidad + cantidad > productoStock) {
+                 alert(`No puede añadir esa cantidad. El total excede el stock disponible (${productoStock}).`);
+                 return;
+            }
+            productosEnVenta[productoExistenteIndex].cantidad += cantidad;
+        } else {
+            productosEnVenta.push({
+                id: productoId,
+                nombre: productoNombre,
+                precio: productoPrecio,
+                cantidad: cantidad
+            });
+        }
+        
+        renderizarProductosEnVenta();
+        selectProductoVenta.selectedIndex = 0;
+        cantidadVentaInput.value = 1;
+    });
+
+    window.removerProductoVenta = (index) => {
+        productosEnVenta.splice(index, 1);
+        renderizarProductosEnVenta();
+    };
+
+    formVenta.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        if (productosEnVenta.length === 0) {
+            alert("Debe añadir al menos un producto a la venta.");
+            return;
+        }
+
+        if (selectMetodoPago.value === 'pago_movil' && referenciaPagoInput.value.length !== 4) {
+            alert("Por favor, ingrese los 4 dígitos de la referencia de Pago Móvil.");
+            return;
+        }
+
+        // 1. Registrar la venta
+        let ventas = obtenerVentas();
+        const nuevaVenta = {
+            id: Date.now().toString(),
+            fecha: formVenta.fechaVenta.value,
+            montoTotal: parseFloat(formVenta.montoVenta.value).toFixed(2),
+            metodoPago: selectMetodoPago.value,
+            referenciaPago: referenciaPagoInput.value,
+            productosVendidos: productosEnVenta.map(p => ({
+                id: p.id,
+                nombre: p.nombre,
+                precioUnitario: p.precio,
+                cantidad: p.cantidad
+            })),
+            timestamp: new Date().toLocaleString()
+        };
+        ventas.push(nuevaVenta);
+        guardarVentas(ventas);
+
+        // 2. Actualizar Inventario (Reducir Stock)
+        let productos = obtenerProductos();
+        productosEnVenta.forEach(prodVenta => {
+            const index = productos.findIndex(p => p.id === prodVenta.id);
+            if (index > -1) {
+                productos[index].cantidad -= prodVenta.cantidad;
+                if (productos[index].cantidad < 0) productos[index].cantidad = 0;
+            }
+        });
+        guardarProductos(productos); // Esto recalcula el total de inventario y repuebla los selects
+
+        // 3. Resetear y Notificar
+        alert(`Venta registrada exitosamente! Monto: $${nuevaVenta.montoTotal}`);
+        formVenta.reset();
+        productosEnVenta = [];
+        renderizarProductosEnVenta();
+        selectMetodoPago.dispatchEvent(new Event('change')); // Ocultar referencia si es necesario
+        formVenta.montoVenta.value = (0.00).toFixed(2);
+        poblarSelectorProductos('venta'); // Refrescar el stock visible en el selector
+
+    });
+
+    function renderizarFacturas() {
+        const ventas = obtenerVentas().reverse(); // Mostrar las más recientes primero
+        if (ventas.length === 0) {
+            listaFacturasDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6);">Aún no hay ventas registradas.</p>';
+            return;
+        }
+
+        listaFacturasDiv.innerHTML = ventas.map(v => {
+            const productosStr = v.productosVendidos.map(p => 
+                `${p.cantidad}x ${p.nombre} ($${p.precioUnitario})`
+            ).join('<br>');
+            const ref = v.referenciaPago ? ` | Ref: <b>${v.referenciaPago}</b>` : '';
+
+            return `
+                <div class="factura-item">
+                    <p><strong>Fecha/Hora:</strong> ${v.timestamp}</p>
+                    <p><strong>Productos:</strong><br>${productosStr}</p>
+                    <p><strong>Pago:</strong> ${v.metodoPago.replace('_', ' ').toUpperCase()}${ref}</p>
+                    <p class="total">Total: $${v.montoTotal}</p>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function exportarExcelVentas() {
+        const ventas = obtenerVentas();
+        if (ventas.length === 0) {
+            alert("No hay ventas para exportar.");
+            return;
+        }
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "ID Venta,Fecha/Hora,Monto Total,Método de Pago,Referencia Pago,Productos Vendidos\n";
+        ventas.forEach(v => {
+            const productosStr = v.productosVendidos.map(p => 
+                `${p.cantidad}x ${p.nombre} @ $${p.precioUnitario}`
+            ).join('; ');
+            csvContent += `${v.id},"${v.timestamp}",${v.montoTotal},${v.metodoPago},${v.referenciaPago || ''},"${productosStr}"\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "historial_ventas.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // **********************************************
+    //         LÓGICA CALCULADORA (NUEVA SECCIÓN)
+    // **********************************************
+    const formCalculadora = document.getElementById('formCalculadora');
+    const calcNombre = document.getElementById('calcNombre');
+    const calcCosto = document.getElementById('calcCosto');
+    const calcProveedor = document.getElementById('calcProveedor');
+    const calcCantidad = document.getElementById('calcCantidad');
+    const calcIVA = document.getElementById('calcIVA');
+    const calcGanancia = document.getElementById('calcGanancia');
+    const calcResultado = document.getElementById('calcResultado');
+    const btnCalcularPrecio = document.getElementById('btnCalcularPrecio');
+    const btnCargarCalc = document.getElementById('btnCargarCalc');
+
+    function guardarCalculadora(data) {
+      localStorage.setItem('calculadora', JSON.stringify(data));
+    }
+    function obtenerCalculadora() {
+      return JSON.parse(localStorage.getItem('calculadora')) || null;
+    }
+
+    function calcularPrecioVenta(costo, ivaPercent, gananciaPercent) {
+      const costoNum = parseFloat(costo) || 0;
+      const ivaFactor = 1 + (parseFloat(ivaPercent) || 0) / 100;
+      const gananciaFactor = 1 + (parseFloat(gananciaPercent) || 0) / 100;
+      return (costoNum * ivaFactor * gananciaFactor);
+    }
+
+    // Mostrar resultado al presionar "Calcular Precio"
+    btnCalcularPrecio.addEventListener('click', () => {
+      const precio = calcularPrecioVenta(calcCosto.value, calcIVA.value, calcGanancia.value);
+      calcResultado.innerHTML = `Precio de venta sugerido: $${precio.toFixed(2)} (IVA ${calcIVA.value}% y ganancia ${calcGanancia.value}%)`;
+      // Guardar configuración de calculadora
+      guardarCalculadora({
+        nombre: calcNombre.value,
+        costo: parseFloat(calcCosto.value) || 0,
+        proveedor: calcProveedor.value,
+        cantidad: parseInt(calcCantidad.value) || 1,
+        iva: parseFloat(calcIVA.value) || 0,
+        ganancia: parseFloat(calcGanancia.value) || 0,
+        ultimoCalculo: new Date().toISOString()
+      });
+    });
+
+    // Al enviar el formulario de calculadora: crear producto en inventario y cambiar a la pestaña Inventario
+    formCalculadora.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nombre = calcNombre.value.trim();
+      if (!nombre) { alert('Ingrese el nombre del producto.'); return; }
+
+      const costo = parseFloat(calcCosto.value) || 0;
+      const proveedor = calcProveedor.value.trim();
+      const cantidad = parseInt(calcCantidad.value) || 1;
+      const iva = parseFloat(calcIVA.value) || 0;
+      const ganancia = parseFloat(calcGanancia.value) || 0;
+
+      const precioVenta = calcularPrecioVenta(costo, iva, ganancia);
+
+      // Crear producto y guardarlo en inventario
+      const productos = obtenerProductos();
+      const nuevoProducto = {
+        id: Date.now().toString(),
+        nombre,
+        cantidad,
+        costo: parseFloat(costo.toFixed(2)),
+        precio: parseFloat(precioVenta.toFixed(2)),
+        proveedor: proveedor,
+        fechaRegistro: new Date().toISOString().slice(0,10)
+      };
+      productos.push(nuevoProducto);
+      guardarProductos(productos);
+      registrarBitacora(`Producto ${nombre} creado desde Calculadora (Cantidad: ${cantidad}, Precio: $${precioVenta.toFixed(2)}).`, null);
+
+      // Guardar la configuración de calculadora
+      guardarCalculadora({
+        nombre, costo, proveedor, cantidad, iva, ganancia, ultimoCalculo: new Date().toISOString()
+      });
+
+      // Mostrar resultado y cambiar a Inventario
+      calcResultado.innerHTML = `Producto creado en inventario: ${nombre} — Precio: $${precioVenta.toFixed(2)}`;
+      // Cambiar a pestaña Inventario
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const tabInventario = Array.from(document.querySelectorAll('.nav-tab')).find(t => t.dataset.tab === 'inventario');
+      if (tabInventario) tabInventario.classList.add('active');
+      document.getElementById('inventario').classList.add('active');
+
+      // Refrescar inventario
+      renderizarListaProductos();
+      calcularTotalInventario();
+      // Limpiar formulario calculadora (si se desea)
+      // formCalculadora.reset();
+    });
+
+    // Cargar última configuración guardada en la calculadora al hacer click en "Cargar"
+    btnCargarCalc.addEventListener('click', () => {
+      const data = obtenerCalculadora();
+      if (!data) { alert('No hay configuraciones guardadas.'); return; }
+      calcNombre.value = data.nombre || '';
+      calcCosto.value = data.costo || '';
+      calcProveedor.value = data.proveedor || '';
+      calcCantidad.value = data.cantidad || 1;
+      calcIVA.value = data.iva || 16;
+      calcGanancia.value = data.ganancia || 20;
+      const precio = calcularPrecioVenta(calcCosto.value, calcIVA.value, calcGanancia.value);
+      calcResultado.innerHTML = `Precio sugerido cargado: $${precio.toFixed(2)} (guardado ${new Date(data.ultimoCalculo).toLocaleString()})`;
+    });
+
+    // **********************************************
+    //         INICIALIZACIÓN GLOBAL
+    // **********************************************
+
+    function initApp() {
+        // Inicialización del módulo de Créditos
+        renderizarListaClientes();
+        calcularTotalCreditos();
+        mostrarBitacora();
+        poblarSelectorProductos('credito');
+
+        // Inicialización del módulo de Inventario
+        renderizarListaProductos();
+        calcularTotalInventario();
+        
+        // Inicialización del módulo de Ventas
+        calcularTotalVentas();
+        renderizarFacturas();
+        poblarSelectorProductos('venta'); // Llamada inicial para ventas
+        selectMetodoPago.dispatchEvent(new Event('change')); // Asegura que la referencia de pago móvil esté oculta al inicio
+
+        // Cargar calculadora si existe (no sobrescribe hasta que usuario presione cargar)
+        const calcSaved = obtenerCalculadora();
+        if (calcSaved) {
+          // opcional: mostrar un pequeño aviso en la calculadora (lo dejamos invisible hasta que el usuario la abra)
+          // Si deseas precargar automáticamente, descomenta:
+          // calcNombre.value = calcSaved.nombre || '';
+          // calcCosto.value = calcSaved.costo || '';
+          // calcProveedor.value = calcSaved.proveedor || '';
+          // calcCantidad.value = calcSaved.cantidad || 1;
+          // calcIVA.value = calcSaved.iva || 16;
+          // calcGanancia.value = calcSaved.ganancia || 20;
+        }
+    }
+    
+    // Asignar funciones al objeto global (window) para que sean accesibles desde el HTML
+    window.editarCliente = editarCliente;
+    window.eliminarCliente = eliminarCliente;
+    window.mostrarFechasCliente = mostrarFechasCliente;
+    window.filtrarClientes = filtrarClientes;
+    window.filtrarProductos = filtrarProductos;
+    window.exportarExcelInventario = exportarExcelInventario;
+    window.exportarExcelCreditos = exportarExcelCreditos;
+    window.exportarExcelVentas = exportarExcelVentas;
+    window.removerProductoVenta = removerProductoVenta;
+    window.removerProductoCredito = window.removerProductoCredito; // ya definido arriba
+    window.editarProducto = editarProducto;
+    window.eliminarProducto = eliminarProducto;
+
+  </script>
+</body>
+</html>
